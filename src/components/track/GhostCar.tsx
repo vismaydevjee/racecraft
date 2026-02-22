@@ -67,13 +67,14 @@ export function GhostCar() {
     const sampleIdx = Math.floor(progress.current * speedFactors.length) % speedFactors.length;
     const targetFactor = speedFactors[sampleIdx] || 1;
     
-    // Convert maxSpeed (km/h) to units/sec
-    // Let's assume 1 unit = 1 meter roughly
-    // 300 km/h = 83 m/s.
-    // Our track is roughly 200-500 units long.
-    // Let's scale maxSpeed to game units. 300km/h -> 150 units/sec
-    const GAME_SPEED_SCALE = 0.5;
-    const maxGameSpeed = maxSpeed * GAME_SPEED_SCALE;
+    // Convert maxSpeed (km/h) -> world units / second.
+    // The previous calculation used km/h directly as units/sec, which made the
+    // numbers physically inconsistent even if the displayed telemetry looked right.
+    const KMH_TO_MPS = 1000 / 3600;
+    const MPS_TO_KMH = 3600 / 1000;
+    // 1 world unit ~= 1.8 meters, tuned to keep current lap pacing close to prior behavior.
+    const WORLD_UNITS_PER_METER = 1.8;
+    const maxGameSpeed = maxSpeed * KMH_TO_MPS * WORLD_UNITS_PER_METER;
     
     const targetSpeed = maxGameSpeed * targetFactor;
     
@@ -113,7 +114,7 @@ export function GhostCar() {
     
     // Update Telemetry
     // Convert game units back to km/h for display
-    const kmh = speed.current / GAME_SPEED_SCALE;
+    const kmh = (speed.current / WORLD_UNITS_PER_METER) * MPS_TO_KMH;
     setTelemetry(kmh); 
     setCurrentSpeedFactor(speed.current / maxGameSpeed);
   });
